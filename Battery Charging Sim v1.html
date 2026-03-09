@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battery Charging Sim</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0f11;
+      --surface: #161820;
+      --border: #2a2d36;
+      --accent: #e8c547;
+      --green: #4ecb71;
+      --red: #e85454;
+      --blue: #5ab4f5;
+      --muted: #5a5f70;
+      --text: #c8cdd8;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Barlow Condensed', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    h1 span {
+      color: var(--muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    .panel-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .panel-title span {
+      color: var(--accent);
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .control-label strong {
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 12px;
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .stat-value.green {
+      color: var(--green);
+    }
+
+    .stat-value.blue {
+      color: var(--blue);
+    }
+
+    .stat-value.accent {
+      color: var(--accent);
+    }
+
+    .stat-value.red {
+      color: var(--red);
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .stat-row .stat-unit {
+      margin-top: 0;
+    }
+
+    .timeline-wrap {
+      overflow-x: auto;
+      margin-top: 4px;
+    }
+
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 0;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      margin-top: 4px;
+    }
+
+    /* Charging window range slider */
+    .charge-window-wrap {
+      margin-top: 12px;
+      position: relative;
+      user-select: none;
+    }
+
+    .charge-window-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .charge-window-label span {
+      color: var(--accent);
+    }
+
+    .range-track {
+      position: relative;
+      height: 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .range-track-bg {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--border);
+      border-radius: 0;
+    }
+
+    .range-track-fill {
+      position: absolute;
+      height: 4px;
+      background: var(--red);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .range-handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      cursor: grab;
+      transform: translateX(-50%);
+      z-index: 2;
+      top: 50%;
+      margin-top: -7px;
+    }
+
+    .range-handle:active {
+      cursor: grabbing;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      padding: 32px;
+      max-width: 520px;
+      width: calc(100% - 48px);
+    }
+    .modal h2 {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .modal p {
+      font-family: var(--sans);
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .modal p:last-of-type { margin-bottom: 24px; }
+    .modal-close {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+    }
+    .modal-close:hover { opacity: 0.85; }
+
+    /* ── Tooltips ── */
+    .has-tip {
+      position: relative;
+    }
+    .tip-bubble {
+      display: block;
+      position: fixed;
+      background: #1e2028;
+      border: 1px solid var(--accent);
+      padding: 10px 12px;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+      width: 220px;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .tip-bubble.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Intro modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2>// Battery Charging Simulator</h2>
+      <p>This tool helps you understand how far a set of drone batteries will get you through a working day, given how they're charged and used.</p>
+      <p>Each battery starts the day fully charged. The simulation tracks every battery minute by minute — when it's in the drone, sitting idle, or on the charger — and tells you how many flights you can complete before things run dry.</p>
+      <p>Use the controls on the left to set up your equipment. The timeline shows each battery as a row: <strong style="color:#4ecb71">green</strong> while flying, <strong style="color:#e85454">red</strong> while charging, <strong style="color:#4a4d56">grey</strong> while idle. The height of each bar shows the charge level. A ☠️ marks the moment a flight couldn't be completed due to insufficient charge.</p>
+      <p>The charging window control lets you restrict when batteries can be charged — drag the handles to set the available window.</p>
+      <button class="modal-close" id="modal-close">Got it — let's go</button>
+    </div>
+  </div>
+
+  <h1>BATTERY CHARGING SIM <span>// 4.75%/min drain · 0.53%/min charge</span></h1>
+
+  <div class="layout">
+    <div class="left">
+      <div class="panel">
+        <div class="panel-title">// Configuration</div>
+
+        <div class="section-label">— Common</div>
+        <div class="control-group has-tip" data-tip="The total number of batteries you have available at the start of the day.">
+          <div class="control-label">Total Batteries <strong id="bat-val">3</strong></div>
+          <input type="range" id="batteries" min="1" max="20" value="3">
+          <span class="tip-bubble"></span>
+        </div>
+        <div class="control-group has-tip" data-tip="How many batteries can be charged at the same time. This is limited by your charger hardware — e.g. a 3-bay charger that charges one at a time = 1.">
+          <div class="control-label">Charging Simultaneously <strong id="chg-val">1</strong></div>
+          <input type="range" id="chargers" min="1" max="10" value="1">
+          <span class="tip-bubble"></span>
+        </div>
+        <div class="control-group has-tip" data-tip="The total length of the working day. The simulation runs for this duration and counts everything that happens within it.">
+          <div class="control-label">Day length (hrs) <strong id="day-val">7</strong></div>
+          <input type="range" id="dayhours" min="3" max="12" value="7">
+          <span class="tip-bubble"></span>
+        </div>
+        <div class="control-group has-tip" data-tip="How charged the batteries are at the start of the day. Keeping batteries at 100% long-term can degrade them — many operators store at around 60–80%.">
+          <div class="control-label">Battery start level <strong id="startlevel-val">100</strong>%</div>
+          <input type="range" id="startlevel" min="50" max="100" value="100">
+          <span class="tip-bubble"></span>
+        </div>
+
+        <hr class="divider">
+        <div class="section-label">— Customer Use</div>
+        <div class="control-group has-tip" data-tip="How long each individual flight lasts.">
+          <div class="control-label">Flight time (min) <strong id="ft-val">5</strong></div>
+          <input type="range" id="flighttime" min="1" max="10" value="5">
+          <span class="tip-bubble"></span>
+        </div>
+        <div class="control-group has-tip" data-tip="The time between one flight ending and the next one starting. This represents the tempo the dealership works at.">
+          <div class="control-label">Gap between flights (min) <strong id="gap-val">10</strong></div>
+          <input type="range" id="gaptime" min="1" max="60" value="10">
+          <span class="tip-bubble"></span>
+        </div>
+        <div class="control-group has-tip" style="display:flex;align-items:center;gap:10px;margin-bottom:0;" data-tip="The lazy operator doesn't put batteries on charge 'till they're empty. Less work for them, but less effective at supporting high tempo operations.">
+          <input type="checkbox" id="lazy-operator"
+            style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;">
+          <label for="lazy-operator"
+            style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">Lazy Operator</label>
+          <span class="tip-bubble"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#4ecb71"></div>DISCHARGING
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#4a4d56"></div>IDLE
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#e85454"></div>CHARGING
+        </div>
+      </div>
+      <div class="panel" style="padding:16px">
+        <div class="panel-title">// <span>Customer Use</span> — typical flight operations</div>
+        <div class="timeline-wrap"><canvas id="canvas-frequent"></canvas></div>
+
+        <!-- Charging window control — sits directly below timeline -->
+        <div class="charge-window-wrap" id="charge-window-wrap">
+          <div class="charge-window-label">
+            Charging window: <span id="cw-label">all day</span>
+          </div>
+          <div class="range-track" id="range-track">
+            <div class="range-track-bg"></div>
+            <div class="range-track-fill" id="range-fill"></div>
+            <div class="range-handle" id="handle-start"></div>
+            <div class="range-handle" id="handle-end"></div>
+          </div>
+        </div>
+
+        <div class="stats" style="margin-top:16px;padding-top:16px;grid-template-columns:1fr 1fr;">
+          <div class="stat">
+            <div class="stat-label">Before Battery Out</div>
+            <div class="stat-row"><span class="stat-value accent" id="stat-flights-before-out">—</span><span class="stat-unit"> flights</span></div>
+            <div class="stat-row"><span class="stat-value accent" id="stat-time-before-out">—</span><span class="stat-unit"> flight time</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Total Runtime</div>
+            <div class="stat-row"><span class="stat-value green" id="stat-successful-flights">—</span><span class="stat-unit"> flights</span></div>
+            <div class="stat-row"><span class="stat-value green" id="stat-freq-daily">—</span><span class="stat-unit"> flight time</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DRAIN = 4.75;
+    const CHARGE = 0.53;
+    const FULL = 100;
+    const MIN_USE = 30;
+
+    // ── Modal ─────────────────────────────────────────────────────────────────────
+    document.getElementById('modal-close').addEventListener('click', () => {
+      document.getElementById('modal-overlay').style.display = 'none';
+    });
+
+    // ── Tooltips ─────────────────────────────────────────────────────────────────
+    (function() {
+      let hoverTimer = null;
+      let activeEl = null;
+
+      document.querySelectorAll('.has-tip').forEach(el => {
+        const bubble = el.querySelector('.tip-bubble');
+        const text = el.getAttribute('data-tip');
+        if (!bubble || !text) return;
+        bubble.textContent = text;
+
+        el.addEventListener('mouseenter', e => {
+          hoverTimer = setTimeout(() => {
+            bubble.style.left = (e.clientX + 14) + 'px';
+            bubble.style.top  = (e.clientY - 6) + 'px';
+            bubble.classList.add('visible');
+            activeEl = bubble;
+          }, 1000);
+        });
+
+        el.addEventListener('mousemove', e => {
+          if (activeEl === bubble) {
+            bubble.style.left = (e.clientX + 14) + 'px';
+            bubble.style.top  = (e.clientY - 6) + 'px';
+          }
+        });
+
+        el.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimer);
+          bubble.classList.remove('visible');
+          activeEl = null;
+        });
+      });
+    })();
+
+    // ── Charging window state (fractions 0–1 of day) ─────────────────────────────
+    let cwStart = 0;   // fraction of day charging starts
+    let cwEnd = 1;   // fraction of day charging ends
+
+    // ── Charging window UI ────────────────────────────────────────────────────────
+    function initChargingWindow() {
+      const track = document.getElementById('range-track');
+      const fill = document.getElementById('range-fill');
+      const hs = document.getElementById('handle-start');
+      const he = document.getElementById('handle-end');
+
+      function render() {
+        const w = track.offsetWidth;
+        hs.style.left = (cwStart * w) + 'px';
+        he.style.left = (cwEnd * w) + 'px';
+        fill.style.left = (cwStart * w) + 'px';
+        fill.style.width = ((cwEnd - cwStart) * w) + 'px';
+
+        const dayMinutes = +document.getElementById('dayhours').value * 60;
+        const s = Math.round(cwStart * dayMinutes);
+        const e = Math.round(cwEnd * dayMinutes);
+        const label = (s === 0 && e === dayMinutes)
+          ? 'all day'
+          : `${s}m – ${e}m`;
+        document.getElementById('cw-label').textContent = label;
+      }
+
+      function drag(handle, onMove) {
+        handle.addEventListener('mousedown', e => {
+          e.preventDefault();
+          const move = ev => {
+            const rect = track.getBoundingClientRect();
+            let f = (ev.clientX - rect.left) / rect.width;
+            f = Math.max(0, Math.min(1, f));
+            onMove(f);
+            render();
+            update();
+          };
+          const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+          window.addEventListener('mousemove', move);
+          window.addEventListener('mouseup', up);
+        });
+
+        // Touch support
+        handle.addEventListener('touchstart', e => {
+          e.preventDefault();
+          const move = ev => {
+            const rect = track.getBoundingClientRect();
+            let f = (ev.touches[0].clientX - rect.left) / rect.width;
+            f = Math.max(0, Math.min(1, f));
+            onMove(f);
+            render();
+            update();
+          };
+          const up = () => { window.removeEventListener('touchmove', move); window.removeEventListener('touchend', up); };
+          window.addEventListener('touchmove', move, { passive: false });
+          window.addEventListener('touchend', up);
+        }, { passive: false });
+      }
+
+      drag(hs, f => { cwStart = Math.min(f, cwEnd - 0.01); });
+      drag(he, f => { cwEnd = Math.max(f, cwStart + 0.01); });
+
+      // Sync width after layout
+      window.addEventListener('resize', render);
+      // Initial render after a tick so offsetWidth is correct
+      setTimeout(render, 0);
+    }
+
+    // ── Draw ──────────────────────────────────────────────────────────────────────
+    function drawTimeline(canvasId, result, chargeWindowStart, chargeWindowEnd) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const ROW = 40, PAD = 4, LABEL = 52;
+      const W = Math.max(600, result.dayMinutes * 2);
+      const H = result.numBatteries * (ROW + PAD) + 30;
+      canvas.width = W; canvas.height = H;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.clearRect(0, 0, W, H);
+
+      const ppm = (W - LABEL) / result.dayMinutes;
+
+      // Shade outside charging window
+      const cwS = LABEL + chargeWindowStart * (W - LABEL);
+      const cwE = LABEL + chargeWindowEnd * (W - LABEL);
+      ctx.fillStyle = 'rgba(232,84,84,0.06)';
+      ctx.fillRect(LABEL, 0, cwS - LABEL, H - 14);
+      ctx.fillRect(cwE, 0, W - cwE, H - 14);
+
+      // Time grid
+      for (let t = 0; t <= result.dayMinutes; t += 60) {
+        const x = LABEL + t * ppm;
+        ctx.fillStyle = '#2a2d36'; ctx.fillRect(x, 0, 1, H - 14);
+        ctx.fillStyle = '#5a5f70'; ctx.font = '10px Share Tech Mono';
+        ctx.fillText(t + 'm', x + 2, H - 2);
+      }
+
+      // Charging window boundary lines
+      ctx.fillStyle = 'rgba(232,84,84,0.4)';
+      ctx.fillRect(cwS, 0, 2, H - 14);
+      ctx.fillRect(cwE, 0, 2, H - 14);
+
+      const statusColor = { in_use: '#4ecb71', charging: '#e85454', idle: '#4a4d56' };
+
+      for (let i = 0; i < result.numBatteries; i++) {
+        const y = i * (ROW + PAD);
+        ctx.fillStyle = '#5a5f70'; ctx.font = '10px Share Tech Mono';
+        ctx.fillText('B' + (i + 1), 4, y + ROW / 2 + 4);
+        const row = result.timeline[i];
+        for (let t = 0; t < row.length; t++) {
+          const s = row[t];
+          const x = LABEL + t * ppm;
+          const w = Math.ceil(ppm);
+          const color = statusColor[s.status] || '#4a4d56';
+          const band = Math.ceil((s.charge / 100) * 5);
+          const fillH = (band / 5) * ROW;
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y + (ROW - fillH), w, fillH);
+        }
+      }
+    }
+
+    // ── Charger assignment ────────────────────────────────────────────────────────
+    function assignChargers(batteries, inUseBattery, numChargers, chargingAllowed) {
+      if (!chargingAllowed) {
+        for (const b of batteries) {
+          if (b.status === 'charging') b.status = 'idle';
+        }
+        return;
+      }
+      let chargersLeft = numChargers;
+      for (const b of batteries) {
+        if (b !== inUseBattery && b.wasCharging && b.charge < FULL) {
+          b.status = 'charging'; chargersLeft--;
+        }
+      }
+      const needCharge = batteries
+        .filter(b => b !== inUseBattery && b.status !== 'charging' && b.charge < FULL)
+        .sort((a, b) => a.charge - b.charge);
+      for (const b of needCharge) {
+        if (chargersLeft <= 0) break;
+        b.status = 'charging'; chargersLeft--;
+      }
+    }
+
+    // ── Frequent Use ──────────────────────────────────────────────────────────────
+    function simulateFrequent(numBatteries, numChargers, dayMinutes, flightTime, gapTime, cwStart, cwEnd, lazy, startLevel) {
+      const batteries = Array.from({ length: numBatteries }, (_, i) =>
+        ({ id: i, charge: startLevel, status: 'idle', wasCharging: false, wasInUse: false }));
+      const timeline = Array.from({ length: numBatteries }, () => []);
+      let activeMinutes = 0, totalFlights = 0, successfulFlights = 0, flightsBeforeOut = 0;
+      let freqUninterrupted = null;
+      let currentFlightFailed = false;
+      let firstOutRecorded = false;
+
+      let phase = 'gap', countdown = 0, activeBattery = null, waitingForBattery = false;
+      const skippedAt = [], outAt = [];
+
+      const cwStartMin = cwStart * dayMinutes;
+      const cwEndMin = cwEnd * dayMinutes;
+      const flightCharge = flightTime * DRAIN;
+      const minToFly = Math.max(20, flightCharge);
+      const LAZY_THRESHOLD = 20;
+
+      for (let t = 0; t < dayMinutes; t++) {
+        const chargingAllowed = t >= cwStartMin && t < cwEndMin;
+
+        if (phase === 'flight') {
+          countdown--;
+          if (countdown <= 0) {
+            if (!currentFlightFailed) {
+              successfulFlights++;
+              if (!firstOutRecorded) flightsBeforeOut++;
+            }
+            phase = 'gap';
+            countdown = gapTime;
+            waitingForBattery = false;
+
+            // Swap if current battery can't complete the next flight
+            if (activeBattery.charge <= minToFly) {
+              activeBattery = null;
+            }
+            // Non-lazy also swaps if the battery will actually go on a charger AND a better one is available to fly
+            if (!lazy && activeBattery && chargingAllowed && activeBattery.charge < FULL) {
+              const slotsInUse = batteries.filter(b => b !== activeBattery && b.wasCharging && b.charge < FULL).length;
+              const chargerFree = slotsInUse < numChargers;
+              const betterAvailable = batteries.some(b => b !== activeBattery && b.charge > activeBattery.charge && b.charge > minToFly);
+              if (chargerFree && betterAvailable) activeBattery = null;
+            }
+          }
+        } else {
+          if (countdown > 0) countdown--;
+          if (countdown <= 0) {
+            // If we still have an active battery (lazy kept it, or non-lazy kept it), reuse it
+            // Otherwise pick the fullest available that has enough charge
+            const reuse = activeBattery && activeBattery.charge > minToFly ? activeBattery : null;
+            const candidate = reuse ||
+              batteries.filter(b => b.charge > minToFly && !b.wasCharging)
+                .sort((a, b) => b.charge - a.charge)[0] ||
+              batteries.filter(b => b.charge > minToFly)
+                .sort((a, b) => b.charge - a.charge)[0] || null;
+            if (candidate) {
+              activeBattery = candidate;
+              phase = 'flight';
+              countdown = flightTime;
+              totalFlights++;
+              currentFlightFailed = false;
+              waitingForBattery = false;
+            } else {
+              if (!waitingForBattery) {
+                skippedAt.push(t);
+                outAt.push(t);
+                if (freqUninterrupted === null) freqUninterrupted = t;
+                firstOutRecorded = true;
+                waitingForBattery = true;
+              }
+            }
+          }
+        }
+
+        for (const b of batteries) b.status = 'idle';
+        if (phase === 'flight' && activeBattery) activeBattery.status = 'in_use';
+        assignChargers(batteries, activeBattery, numChargers, chargingAllowed);
+
+        for (const b of batteries) timeline[b.id].push({ status: b.status, charge: b.charge });
+
+        for (const b of batteries) {
+          if (b.status === 'in_use') {
+            b.charge = Math.max(0, b.charge - DRAIN);
+            activeMinutes++;
+            if (b.charge <= 0 && freqUninterrupted === null) {
+              freqUninterrupted = t + 1;
+              outAt.push(t + 1);
+              currentFlightFailed = true;
+              firstOutRecorded = true;
+            }
+          } else if (b.status === 'charging') {
+            b.charge = Math.min(FULL, b.charge + CHARGE);
+          }
+          b.wasCharging = b.status === 'charging';
+          b.wasInUse = b.status === 'in_use';
+        }
+      }
+
+      return {
+        timeline, numBatteries, dayMinutes, activeMinutes, totalFlights, successfulFlights,
+        flightsBeforeOut, skippedAt, outAt,
+        uninterruptedMinutes: freqUninterrupted !== null ? freqUninterrupted : dayMinutes
+      };
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────────
+    function update() {
+      const numBatteries = +document.getElementById('batteries').value;
+      const numChargers = +document.getElementById('chargers').value;
+      const dayMinutes = +document.getElementById('dayhours').value * 60;
+      const flightTime = +document.getElementById('flighttime').value;
+      const gapTime = +document.getElementById('gaptime').value;
+      const lazy = document.getElementById('lazy-operator').checked;
+      const startLevel = +document.getElementById('startlevel').value;
+
+      document.getElementById('bat-val').textContent = numBatteries;
+      document.getElementById('chg-val').textContent = numChargers;
+      document.getElementById('day-val').textContent = dayMinutes / 60;
+      document.getElementById('ft-val').textContent = flightTime;
+      document.getElementById('gap-val').textContent = gapTime;
+      document.getElementById('startlevel-val').textContent = startLevel;
+
+      const f = simulateFrequent(numBatteries, numChargers, dayMinutes, flightTime, gapTime, cwStart, cwEnd, lazy, startLevel);
+
+      function fmtTime(mins) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        const u = s => `<span style="font-size:13px;color:var(--muted)">${s}</span>`;
+        return h > 0
+          ? `${h}${u('hr')} ${m}${u('min')}`
+          : `${m}${u('min')}`;
+      }
+
+      // Before battery out
+      document.getElementById('stat-flights-before-out').textContent = f.flightsBeforeOut;
+      document.getElementById('stat-time-before-out').innerHTML = fmtTime(f.flightsBeforeOut * flightTime);
+
+      // Total runtime
+      document.getElementById('stat-successful-flights').textContent = f.successfulFlights;
+      document.getElementById('stat-freq-daily').innerHTML = fmtTime(f.activeMinutes);
+
+      drawTimeline('canvas-frequent', f, cwStart, cwEnd);
+
+      if (f.outAt.length > 0) {
+        const canvas = document.getElementById('canvas-frequent');
+        const ctx = canvas.getContext('2d');
+        const LABEL = 52, ROW = 40, PAD = 4;
+        const ppm = (canvas.width - LABEL) / f.dayMinutes;
+        const midY = (f.numBatteries * (ROW + PAD)) / 2 + 6;
+        ctx.font = '20px serif';
+        ctx.textAlign = 'center';
+        for (const t of f.outAt) {
+          ctx.fillText('☠️', LABEL + t * ppm + 8, midY);
+        }
+        ctx.textAlign = 'left';
+      }
+    }
+
+    ['batteries', 'chargers', 'dayhours', 'flighttime', 'gaptime', 'startlevel'].forEach(id =>
+      document.getElementById(id).addEventListener('input', update));
+    document.getElementById('lazy-operator').addEventListener('change', update);
+
+    initChargingWindow();
+    update();
+  </script>
+</body>
+
+</html>
