@@ -446,7 +446,7 @@
       <h2>Battery Charging Simulator</h2>
       <p>This tool helps you understand how far a set of drone batteries will get you through a working day, given how they're charged and used.</p>
       <p>Each battery starts the day fully charged. The simulation tracks every battery minute by minute — when it's in the drone, sitting idle, or on the charger — and tells you how many flights you can complete before things run dry.</p>
-      <p>Use the controls on the left to set up your equipment. The timeline shows each battery as a row: <strong style="color:#8fa83a">green</strong> while flying, <strong style="color:#f6a200">amber</strong> while charging, <strong style="color:#adb6bc">grey</strong> while idle. The height of each bar shows the charge level. A ☠️ marks the moment a flight couldn't be completed due to insufficient charge.</p>
+      <p>Use the controls on the left to set up your equipment. The timeline shows each battery as a row: <strong style="color:#8fa83a">green</strong> while flying, <strong style="color:#f6a200">amber</strong> while charging, <strong style="color:#adb6bc">grey</strong> while idle. The height of each bar shows the charge level. A <strong style="color:#e85454">red marker</strong> indicates the moment a flight couldn't be completed due to insufficient charge.</p>
       <p>The charging window control lets you restrict when batteries can be charged — drag the handles to set the available window.</p>
       <button class="modal-close" id="modal-close">Got it — let's go</button>
     </div>
@@ -901,13 +901,20 @@
         const ctx = canvas.getContext('2d');
         const LABEL = 52, ROW = 40, PAD = 4;
         const ppm = (canvas.width - LABEL) / f.dayMinutes;
-        const midY = (f.numBatteries * (ROW + PAD)) / 2 + 6;
-        ctx.font = '20px serif';
-        ctx.textAlign = 'center';
+        const totalH = f.numBatteries * (ROW + PAD);
         for (const t of f.outAt) {
-          ctx.fillText('☠️', LABEL + t * ppm + 8, midY);
+          const x = Math.round(LABEL + t * ppm);
+          // Vertical rule
+          ctx.fillStyle = 'rgba(232,84,84,0.85)';
+          ctx.fillRect(x, 0, 2, totalH);
+          // Diamond marker at top
+          ctx.save();
+          ctx.translate(x + 1, 10);
+          ctx.rotate(Math.PI / 4);
+          ctx.fillStyle = '#e85454';
+          ctx.fillRect(-5, -5, 10, 10);
+          ctx.restore();
         }
-        ctx.textAlign = 'left';
       }
     }
 
