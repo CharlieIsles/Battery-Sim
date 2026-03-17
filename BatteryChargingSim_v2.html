@@ -468,32 +468,22 @@
   <div class="layout">
     <div class="left">
       <div class="panel">
-        <div class="panel-title">// Configuration</div>
-
-        <div class="section-label">— Common</div>
-        <div class="control-group has-tip" data-tip="The total number of batteries you have available at the start of the day.">
-          <div class="control-label">Total Batteries <strong id="bat-val">3</strong></div>
-          <input type="range" id="batteries" min="1" max="20" value="3">
+        <div class="control-group has-tip" data-tip="Each battery pack contains 3 batteries and 1 charger slot. Adding packs scales both your battery count and charging capacity together.">
+          <div class="control-label">Battery Packs <strong id="packs-val">1</strong></div>
+          <input type="range" id="battery-packs" min="1" max="6" value="1">
           <span class="tip-bubble"></span>
         </div>
-        <div class="control-group has-tip" data-tip="How many batteries can be charged at the same time. This is limited by your charger hardware — e.g. a 3-bay charger that charges one at a time = 1.">
-          <div class="control-label">Charging Simultaneously <strong id="chg-val">1</strong></div>
-          <input type="range" id="chargers" min="1" max="10" value="1">
-          <span class="tip-bubble"></span>
-        </div>
-        <div class="control-group has-tip" data-tip="The total length of the working day. The simulation runs for this duration and counts everything that happens within it.">
+        <div class="control-group has-tip" data-tip="The total length of the working day. The simulation runs for this duration and counts everything that happens within it." style="display:none">
           <div class="control-label">Day length (hrs) <strong id="day-val">7</strong></div>
           <input type="range" id="dayhours" min="3" max="12" value="7">
           <span class="tip-bubble"></span>
         </div>
-        <div class="control-group has-tip" data-tip="How charged the batteries are at the start of the day. Keeping batteries at 100% long-term can degrade them — many operators store at around 60–80%.">
+        <div class="control-group has-tip" data-tip="How charged the batteries are at the start of the day. Keeping batteries at 100% long-term can degrade them — many operators store at around 60–80%." style="display:none">
           <div class="control-label">Battery start level <strong id="startlevel-val">100</strong>%</div>
           <input type="range" id="startlevel" min="50" max="100" value="100">
           <span class="tip-bubble"></span>
         </div>
 
-        <hr class="divider">
-        <div class="section-label">— Customer Use</div>
         <div class="control-group has-tip" data-tip="How long each individual flight lasts.">
           <div class="control-label">Flight time (min) <strong id="ft-val">5</strong></div>
           <input type="range" id="flighttime" min="1" max="10" value="5">
@@ -504,11 +494,11 @@
           <input type="range" id="gaptime" min="1" max="60" value="10">
           <span class="tip-bubble"></span>
         </div>
-        <div class="control-group has-tip" style="display:flex;align-items:center;gap:10px;margin-bottom:0;" data-tip="The lazy operator doesn't put batteries on charge 'till they're empty. Less work for them, but less effective at supporting high tempo operations.">
-          <input type="checkbox" id="lazy-operator"
+        <div class="control-group has-tip" style="display:flex;align-items:center;gap:10px;margin-bottom:0;" data-tip="When enabled, batteries are swapped out during gaps to keep the best-charged battery flying. When off, the operator keeps using the same battery until it needs swapping.">
+          <input type="checkbox" id="optimal-charging"
             style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;">
-          <label for="lazy-operator"
-            style="font-family:var(--sans);font-size:11px;color:var(--slate);letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Lazy Operator</label>
+          <label for="optimal-charging"
+            style="font-family:var(--sans);font-size:11px;color:var(--slate);letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Optimal Charging</label>
           <span class="tip-bubble"></span>
         </div>
       </div>
@@ -531,7 +521,7 @@
         <div class="timeline-wrap"><canvas id="canvas-frequent"></canvas></div>
 
         <!-- Charging window control — sits directly below timeline -->
-        <div class="charge-window-wrap" id="charge-window-wrap">
+        <div class="charge-window-wrap" id="charge-window-wrap" style="display:none">
           <div class="charge-window-label">
             Charging window: <span id="cw-label">all day</span>
           </div>
@@ -860,16 +850,16 @@
 
     // ── Update ────────────────────────────────────────────────────────────────────
     function update() {
-      const numBatteries = +document.getElementById('batteries').value;
-      const numChargers = +document.getElementById('chargers').value;
+      const batteryPacks = +document.getElementById('battery-packs').value;
+      const numBatteries = batteryPacks * 3;
+      const numChargers = batteryPacks;
       const dayMinutes = +document.getElementById('dayhours').value * 60;
       const flightTime = +document.getElementById('flighttime').value;
       const gapTime = +document.getElementById('gaptime').value;
-      const lazy = document.getElementById('lazy-operator').checked;
+      const lazy = !document.getElementById('optimal-charging').checked;
       const startLevel = +document.getElementById('startlevel').value;
 
-      document.getElementById('bat-val').textContent = numBatteries;
-      document.getElementById('chg-val').textContent = numChargers;
+      document.getElementById('packs-val').textContent = batteryPacks;
       document.getElementById('day-val').textContent = dayMinutes / 60;
       document.getElementById('ft-val').textContent = flightTime;
       document.getElementById('gap-val').textContent = gapTime;
@@ -918,9 +908,9 @@
       }
     }
 
-    ['batteries', 'chargers', 'dayhours', 'flighttime', 'gaptime', 'startlevel'].forEach(id =>
+    ['battery-packs', 'dayhours', 'flighttime', 'gaptime', 'startlevel'].forEach(id =>
       document.getElementById(id).addEventListener('input', update));
-    document.getElementById('lazy-operator').addEventListener('change', update);
+    document.getElementById('optimal-charging').addEventListener('change', update);
 
     initChargingWindow();
     update();
